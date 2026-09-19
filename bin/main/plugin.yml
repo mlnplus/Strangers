@@ -1,0 +1,13 @@
+name: Strangers
+version: '${version}'
+main: mlnplus.hu.strangers.Strangers
+api-version: '1.20'
+author: mlnplus
+softdepend: [voicechat, ProtocolLib]
+description: A plugin that makes all players anonymous and integrates voice changing.
+
+commands:
+  strangers:
+    description: Control the Strangers plugin.
+    permission: strangers.admin
+    usage: /strangers [on|off|reload]

@@ -1,0 +1,23 @@
+name: Strangers
+version: '${version}'
+main: mlnplus.hu.strangers.Strangers
+api-version: '1.20'
+author: mlnplus
+website: 'https://mln.plus'
+softdepend: [voicechat, ProtocolLib]
+description: Premium player anonymity, identity obfuscation and voice changer plugin by mlnplus.
+
+commands:
+  strangers:
+    description: Control the Strangers plugin.
+    permission: strangers.admin
+    usage: /strangers [status|on|off|reload|bypass|lives|revive|giverevivebook|deathmessage|deathsound|start|reset]
+    aliases: [stranger, st]
+
+permissions:
+  strangers.admin:
+    description: Full administration permission for Strangers.
+    default: op
+  strangers.bypass:
+    description: Allows bypassing anonymity to view true identities.
+    default: op

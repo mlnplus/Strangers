@@ -1,0 +1,75 @@
+plugins {
+    id 'java'
+    id("xyz.jpenilla.run-paper") version "2.3.1"
+    id("com.gradleup.shadow") version "9.4.1"
+}
+
+group = 'mlnplus.hu'
+version = 'v1'
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+    maven {
+        name = "maxhenkel-repo"
+        url = "https://maven.maxhenkel.de/repository/public"
+    }
+    maven {
+        name = "dmulloy2-repo"
+        url = "https://repo.dmulloy2.net/repository/public/"
+    }
+    maven { url "https://repo.codemc.io/repository/maven-releases/" }
+}
+
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:26.2-rc-2.build.9-alpha")
+    compileOnly("de.maxhenkel.voicechat:voicechat-api:2.6.0")
+    compileOnly("com.comphenix.protocol:ProtocolLib:5.3.0")
+    compileOnly("com.github.retrooper:packetevents-spigot:2.7.0")
+}
+
+tasks {
+    runServer {
+        minecraftVersion("1.21")
+    }
+    
+    build {
+        dependsOn shadowJar
+    }
+}
+
+def targetJavaVersion = 25
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        options.release.set(targetJavaVersion)
+    }
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+shadowJar {
+    archiveFileName = 'Strangersv2.jar'
+    destinationDirectory = file("C:/mlnplus/IdeaArtifacts")
+}
