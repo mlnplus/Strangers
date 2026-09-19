@@ -210,7 +210,7 @@ messages:
     death-subtitle: "<gradient:#ff0033:#990000><bold>☠ DIED ☠</bold></gradient>"
     life-lost: "<#ff2a4b>💔 <gradient:#ff4466:#ff2244><bold>LIFE LOST</bold></gradient> <dark_gray>▪</dark_gray> <gray>Remaining: <#ff4466><bold>{LIVES}</bold></#ff4466> <#ff3355>❤</#ff3355></gray>"
     life-lost-broadcast: "<#ff2a4b>☠ <gradient:#ff3355:#ff6688><bold>{NAME}</bold></gradient> <#ff4d6d>lost a life!</#ff4d6d>"
-    eliminated-broadcast: "<#ff0033>☠☠ <gradient:#ff0033:#880015><bold>{NAME}</bold></gradient> <#ff3355>has run out of lives and been eliminated! <#ff0033>☠☠"
+    eliminated-broadcast: "<#ff0033>☠ <gradient:#ff0033:#880015><bold>{NAME}</bold></gradient> <#ff3355>has run out of lives and been eliminated! <#ff0033>☠"
     revived-broadcast: "<#00ffaa>✦ <gradient:#00ffaa:#00aa66><bold>{NAME}</bold></gradient> <#aaffcc>has been resurrected from the dead!"
     already-revived: "<gradient:#ff3355:#ff6688><bold>STRANGERS</bold></gradient> <dark_gray>»</dark_gray> <#ff4444>This player has already been revived once!"
     player-not-eliminated: "<gradient:#ff3355:#ff6688><bold>STRANGERS</bold></gradient> <dark_gray>»</dark_gray> <#ff4444>This player is not eliminated!"

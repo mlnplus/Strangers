@@ -91,13 +91,17 @@ public class PacketEventsHook implements PacketListener {
                 boolean modified = false;
 
                 for (PlayerInfo entry : entries) {
+                    java.util.UUID targetUuid = entry.getProfileId();
                     UserProfile profile = entry.getGameProfile();
-                    java.util.UUID targetUuid = profile != null ? profile.getUUID() : null;
+                    if (targetUuid == null && profile != null) {
+                        targetUuid = profile.getUUID();
+                    }
                     if (targetUuid == null) {
                         continue;
                     }
 
                     boolean isRevealed = receiverBypassed
+                            || plugin.isBypassed(targetUuid)
                             || (plugin.getTrackerManager() != null && plugin.getTrackerManager().isTrackerRevealed(receiver, targetUuid));
 
                     if (isRevealed) {
@@ -111,11 +115,13 @@ public class PacketEventsHook implements PacketListener {
                         }
 
                         if (!realName.equals("Unknown") && !realName.equalsIgnoreCase(anonName) && !realName.equalsIgnoreCase("Stranger")) {
-                            profile.setName(realName);
+                            if (profile != null) {
+                                profile.setName(realName);
+                            }
                         }
 
                         StrangersDatabase.CachedSkin realSkin = plugin.getOriginalSkin(targetUuid);
-                        if (realSkin != null && realSkin.value != null && realSkin.signature != null) {
+                        if (realSkin != null && realSkin.value != null && realSkin.signature != null && profile != null) {
                             List<TextureProperty> realTextures = new ArrayList<>();
                             realTextures.add(new TextureProperty("textures", realSkin.value, realSkin.signature));
                             profile.setTextureProperties(realTextures);
@@ -133,9 +139,11 @@ public class PacketEventsHook implements PacketListener {
                         modified = true;
                     } else {
                         // Disguised: Stranger name, Stranger skin, Stranger tab name
-                        profile.setName(anonName);
-                        if (!disguisedTextures.isEmpty()) {
-                            profile.setTextureProperties(disguisedTextures);
+                        if (profile != null) {
+                            profile.setName(anonName);
+                            if (!disguisedTextures.isEmpty()) {
+                                profile.setTextureProperties(disguisedTextures);
+                            }
                         }
                         if (entry.getDisplayName() != null
                                 || wrapper.getActions().contains(WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_DISPLAY_NAME)

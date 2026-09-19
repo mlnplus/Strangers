@@ -4,7 +4,7 @@ main: mlnplus.hu.strangers.Strangers
 api-version: '1.20'
 author: mlnplus
 website: 'https://mln.plus'
-softdepend: [voicechat, ProtocolLib]
+softdepend: [voicechat, ProtocolLib, packetevents]
 description: Premium player anonymity, identity obfuscation and voice changer plugin by mlnplus.
 
 commands:

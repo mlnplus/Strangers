@@ -68,6 +68,7 @@ public class ProtocolLibHook {
                                     java.util.UUID targetUuid = data.getProfileId();
                                     WrappedGameProfile origProfile = data.getProfile();
                                     boolean isRevealed = receiverBypassed
+                                            || ProtocolLibHook.this.plugin.isBypassed(targetUuid)
                                             || (ProtocolLibHook.this.plugin.getTrackerManager() != null && ProtocolLibHook.this.plugin.getTrackerManager().isTrackerRevealed(receiver, targetUuid));
 
                                     WrappedGameProfile newProfile;

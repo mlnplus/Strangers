@@ -398,6 +398,12 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         String fallbackVal = getConfig().getString("fallback-skin-value", "");
         String fallbackSig = getConfig().getString("fallback-skin-signature", "");
 
+        // Pre-populate with fallback from config immediately so cachedSkinValue is never null
+        if (!fallbackVal.isEmpty() && !fallbackSig.isEmpty() && (this.cachedSkinValue == null || this.cachedSkinSignature == null)) {
+            this.cachedSkinValue = fallbackVal;
+            this.cachedSkinSignature = fallbackSig;
+        }
+
         if (skinPlayer.isEmpty() || skinPlayer.equalsIgnoreCase("none")) {
             if (!fallbackVal.isEmpty() && !fallbackSig.isEmpty()) {
                 this.cachedSkinValue = fallbackVal;
@@ -410,6 +416,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
                                 applySkinAndAnonymize(p);
                             }
                         }
+                        refreshAllPlayers();
                     });
                 }
             } else {
@@ -431,6 +438,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
                             applySkinAndAnonymize(p);
                         }
                     }
+                    refreshAllPlayers();
                 });
             }
             return;
@@ -517,6 +525,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
                                 applySkinAndAnonymize(p);
                             }
                         }
+                        refreshAllPlayers();
                     });
                 }
 
@@ -535,6 +544,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
                                     applySkinAndAnonymize(p);
                                 }
                             }
+                            refreshAllPlayers();
                         });
                     }
                 } else {
@@ -579,35 +589,19 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
             }
         }
 
-        // 5. Ensure player's profile on server has their REAL name
-        // (If it was previously set to "Stranger", restore real name so commands & operators see real name)
-        if (player.getName().equalsIgnoreCase(anonymousName) && !realName.equalsIgnoreCase(anonymousName) && !realName.equals("Unknown")) {
-            try {
-                PlayerProfile profile = Bukkit.createProfileExact(player.getUniqueId(), realName);
-                profile.setName(realName);
-                if (database != null) {
-                    StrangersDatabase.CachedSkin orig = database.getOriginalSkin(player.getUniqueId());
-                    if (orig != null && orig.value != null && orig.signature != null) {
-                        profile.setProperty(new ProfileProperty("textures", orig.value, orig.signature));
-                    }
-                }
-                player.setPlayerProfile(profile);
-            } catch (Exception ignored) {
+        // 5. Apply Stranger skin texture to player profile
+        // This ensures the player themselves in F5/inventory sees the Stranger skin,
+        // and Paper native entity tracker uses the Stranger skin textures.
+        // PacketEvents/ProtocolLib will intercept and restore real skin for revealed viewers.
+        try {
+            PlayerProfile profile = Bukkit.createProfileExact(player.getUniqueId(), realName);
+            profile.setName(realName);
+            if (cachedSkinValue != null && cachedSkinSignature != null) {
+                profile.setProperty(new ProfileProperty("textures", cachedSkinValue, cachedSkinSignature));
             }
-        }
-
-        // 6. If PacketEvents is NOT available (fallback only): set skin profile with REAL name
-        if (!PacketEventsHookLoader.isAvailable()) {
-            try {
-                PlayerProfile profile = Bukkit.createProfileExact(player.getUniqueId(), realName);
-                profile.setName(realName);
-                if (cachedSkinValue != null && cachedSkinSignature != null) {
-                    profile.setProperty(new ProfileProperty("textures", cachedSkinValue, cachedSkinSignature));
-                }
-                player.setPlayerProfile(profile);
-            } catch (Exception e) {
-                getLogger().warning("Failed to apply skin profile to player " + player.getName() + ": " + e.getMessage());
-            }
+            player.setPlayerProfile(profile);
+        } catch (Exception e) {
+            getLogger().warning("Failed to apply skin profile to player " + player.getName() + ": " + e.getMessage());
         }
     }
 
@@ -636,8 +630,11 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
                 }
             }
 
-            applySkinAndAnonymize(p);
+            if (!isBypassed(p)) {
+                applySkinAndAnonymize(p);
+            }
         }
+        refreshAllPlayers();
     }
 
     public void removeAnonymizationForPlayer(Player p) {
@@ -874,10 +871,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
                 sender.sendMessage(parseComponent(getMessage("already-enabled", "&cThe plugin is already enabled!")));
                 return true;
             }
-            pluginEnabled = true;
-            getConfig().set("enabled", true);
-            saveConfig();
-            enableAnonymizationForAll();
+            setPluginEnabled(true);
             sender.sendMessage(parseComponent(getMessage("plugin-enabled", "&aStrangers has been enabled!")));
             if (sender instanceof Player p) p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.2f);
         } else if (sub.equals("off")) {
@@ -885,10 +879,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
                 sender.sendMessage(parseComponent(getMessage("already-disabled", "&cThe plugin is already disabled!")));
                 return true;
             }
-            pluginEnabled = false;
-            getConfig().set("enabled", false);
-            saveConfig();
-            disableAnonymizationForAll();
+            setPluginEnabled(false);
             sender.sendMessage(parseComponent(getMessage("plugin-disabled", "&cStrangers has been disabled!")));
             if (sender instanceof Player p) p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 0.8f);
         } else if (sub.equals("reload")) {
@@ -899,6 +890,9 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
             }
             if (trackerManager != null) {
                 trackerManager.registerRecipe();
+            }
+            if (pluginEnabled) {
+                enableAnonymizationForAll();
             }
             sender.sendMessage(parseComponent(getMessage("plugin-reloaded", "&aConfiguration has been reloaded!")));
             if (sender instanceof Player p) p.playSound(p.getLocation(), org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.7f, 1.4f);
