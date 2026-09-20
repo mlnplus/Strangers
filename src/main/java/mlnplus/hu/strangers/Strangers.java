@@ -54,6 +54,95 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
     // Cache to map UUIDs to their real player names
     private final Map<UUID, String> realNames = new ConcurrentHashMap<>();
 
+    // Dedicated immutable cache for original player skins (textures value + signature)
+    private final Map<UUID, StrangersDatabase.CachedSkin> realSkins = new ConcurrentHashMap<>();
+
+    public void recordOriginalSkin(Player player) {
+        if (player == null) return;
+        UUID uuid = player.getUniqueId();
+
+        String rName = player.getName();
+        if (!rName.equalsIgnoreCase(anonymousName) && !rName.equalsIgnoreCase("Stranger")) {
+            realNames.put(uuid, rName);
+        }
+
+        // Don't overwrite if we already have a valid real skin in memory
+        StrangersDatabase.CachedSkin existing = realSkins.get(uuid);
+        if (existing != null && existing.value != null && !existing.value.isEmpty() && !existing.value.equals(cachedSkinValue)) {
+            return;
+        }
+
+        // Try getting from player's profile
+        PlayerProfile profile = player.getPlayerProfile();
+        if (profile != null) {
+            for (ProfileProperty prop : profile.getProperties()) {
+                if ("textures".equalsIgnoreCase(prop.getName())) {
+                    String val = prop.getValue();
+                    String sig = prop.getSignature();
+                    if (val != null && !val.isEmpty() && !val.equals(cachedSkinValue)) {
+                        StrangersDatabase.CachedSkin skin = new StrangersDatabase.CachedSkin(val, sig);
+                        realSkins.put(uuid, skin);
+                        String realName = getRealName(uuid);
+                        if (realName.equals("Unknown") || realName.equalsIgnoreCase(anonymousName) || realName.equalsIgnoreCase("Stranger")) {
+                            realName = player.getName();
+                        }
+                        if (database != null) {
+                            database.saveOriginalSkin(uuid, realName, val, sig);
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    public StrangersDatabase.CachedSkin fetchSkinFromMojang(String playerName) {
+        if (playerName == null || playerName.isEmpty() || playerName.equalsIgnoreCase(anonymousName) || playerName.equalsIgnoreCase("Stranger")) {
+            return null;
+        }
+        try {
+            // 1. Get UUID from Player Name
+            URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + playerName);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(4000);
+            conn.setReadTimeout(4000);
+            if (conn.getResponseCode() != 200) return null;
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder builder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) builder.append(line);
+            reader.close();
+
+            String response = builder.toString();
+            String uuidStr = extractJsonKey(response, "id");
+            if (uuidStr == null) return null;
+
+            // 2. Get Profile skin properties
+            URL profileUrl = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuidStr + "?unsigned=false");
+            HttpURLConnection profileConn = (HttpURLConnection) profileUrl.openConnection();
+            profileConn.setRequestMethod("GET");
+            profileConn.setConnectTimeout(4000);
+            profileConn.setReadTimeout(4000);
+            if (profileConn.getResponseCode() != 200) return null;
+
+            BufferedReader profileReader = new BufferedReader(new InputStreamReader(profileConn.getInputStream()));
+            StringBuilder profileBuilder = new StringBuilder();
+            while ((line = profileReader.readLine()) != null) profileBuilder.append(line);
+            profileReader.close();
+
+            String profileResponse = profileBuilder.toString();
+            String textVal = extractJsonKey(profileResponse, "value");
+            String textSig = extractJsonKey(profileResponse, "signature");
+            if (textVal != null && !textVal.isEmpty()) {
+                return new StrangersDatabase.CachedSkin(textVal, textSig);
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
+    }
+
     public String getRealName(UUID uuid) {
         if (uuid == null) return "Unknown";
         String name = realNames.get(uuid);
@@ -82,19 +171,16 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
 
     public StrangersDatabase.CachedSkin getOriginalSkin(UUID uuid) {
         if (uuid == null) return null;
-        // 1. Check in-memory originalProfiles
-        PlayerProfile profile = originalProfiles.get(uuid);
-        if (profile != null) {
-            for (ProfileProperty prop : profile.getProperties()) {
-                if ("textures".equalsIgnoreCase(prop.getName()) && !prop.getValue().equals(cachedSkinValue)) {
-                    return new StrangersDatabase.CachedSkin(prop.getValue(), prop.getSignature());
-                }
-            }
+        // 1. Check in-memory realSkins
+        StrangersDatabase.CachedSkin memSkin = realSkins.get(uuid);
+        if (memSkin != null && memSkin.value != null && !memSkin.value.equals(cachedSkinValue)) {
+            return memSkin;
         }
         // 2. Check SQLite database
         if (database != null) {
             StrangersDatabase.CachedSkin dbSkin = database.getOriginalSkin(uuid);
             if (dbSkin != null && dbSkin.value != null && !dbSkin.value.equals(cachedSkinValue)) {
+                realSkins.put(uuid, dbSkin);
                 return dbSkin;
             }
         }
@@ -103,10 +189,27 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         if (player != null && player.isOnline()) {
             for (ProfileProperty prop : player.getPlayerProfile().getProperties()) {
                 if ("textures".equalsIgnoreCase(prop.getName()) && !prop.getValue().equals(cachedSkinValue)) {
-                    if (database != null) {
-                        database.saveOriginalSkin(uuid, getRealName(uuid), prop.getValue(), prop.getSignature());
+                    StrangersDatabase.CachedSkin skin = new StrangersDatabase.CachedSkin(prop.getValue(), prop.getSignature());
+                    realSkins.put(uuid, skin);
+                    String rName = getRealName(uuid);
+                    if (rName.equals("Unknown") || rName.equalsIgnoreCase(anonymousName) || rName.equalsIgnoreCase("Stranger")) {
+                        rName = player.getName();
                     }
-                    return new StrangersDatabase.CachedSkin(prop.getValue(), prop.getSignature());
+                    if (database != null) {
+                        database.saveOriginalSkin(uuid, rName, prop.getValue(), prop.getSignature());
+                    }
+                    return skin;
+                }
+            }
+        }
+        // 4. Check originalProfiles fallback
+        PlayerProfile profile = originalProfiles.get(uuid);
+        if (profile != null) {
+            for (ProfileProperty prop : profile.getProperties()) {
+                if ("textures".equalsIgnoreCase(prop.getName()) && !prop.getValue().equals(cachedSkinValue)) {
+                    StrangersDatabase.CachedSkin skin = new StrangersDatabase.CachedSkin(prop.getValue(), prop.getSignature());
+                    realSkins.put(uuid, skin);
+                    return skin;
                 }
             }
         }
@@ -130,36 +233,57 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
     }
 
     public void ensureOriginalSkinLoaded(UUID uuid, String realName) {
-        if (uuid == null || realName == null || realName.equalsIgnoreCase(getAnonymousName()) || realName.equalsIgnoreCase("Stranger") || realName.equals("Unknown")) {
+        if (uuid == null) return;
+        if (realName == null || realName.equalsIgnoreCase(getAnonymousName()) || realName.equalsIgnoreCase("Stranger") || realName.equals("Unknown")) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p != null) {
+                realName = p.getName();
+            }
+        }
+        if (realName == null || realName.equalsIgnoreCase(getAnonymousName()) || realName.equalsIgnoreCase("Stranger") || realName.equals("Unknown")) {
             return;
         }
         if (getOriginalSkin(uuid) != null) {
             return;
         }
+        final String finalRealName = realName;
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
+            StrangersDatabase.CachedSkin fetched = null;
             try {
-                PlayerProfile cleanProfile = Bukkit.createProfileExact(uuid, realName);
+                PlayerProfile cleanProfile = Bukkit.createProfileExact(uuid, finalRealName);
                 cleanProfile.complete(true);
                 for (ProfileProperty prop : cleanProfile.getProperties()) {
                     if ("textures".equalsIgnoreCase(prop.getName()) && !prop.getValue().equals(cachedSkinValue)) {
-                        originalProfiles.put(uuid, cleanProfile);
-                        if (database != null) {
-                            database.saveOriginalSkin(uuid, realName, prop.getValue(), prop.getSignature());
-                        }
-                        getServer().getScheduler().runTask(this, () -> {
-                            Player target = Bukkit.getPlayer(uuid);
-                            if (target != null && target.isOnline()) {
-                                for (Player p : Bukkit.getOnlinePlayers()) {
-                                    if (isBypassed(p)) {
-                                        refreshPlayerForViewer(p, target);
-                                    }
-                                }
-                            }
-                        });
+                        fetched = new StrangersDatabase.CachedSkin(prop.getValue(), prop.getSignature());
                         break;
                     }
                 }
             } catch (Throwable ignored) {
+            }
+
+            if (fetched == null) {
+                fetched = fetchSkinFromMojang(finalRealName);
+            }
+
+            if (fetched != null && fetched.value != null && !fetched.value.equals(cachedSkinValue)) {
+                realSkins.put(uuid, fetched);
+                if (database != null) {
+                    database.saveOriginalSkin(uuid, finalRealName, fetched.value, fetched.signature);
+                }
+                getServer().getScheduler().runTask(this, () -> {
+                    Player target = Bukkit.getPlayer(uuid);
+                    if (target != null && target.isOnline()) {
+                        if (isBypassed(target)) {
+                            removeAnonymizationForPlayer(target);
+                        }
+                        refreshPlayerForViewers(target);
+                        for (Player p : Bukkit.getOnlinePlayers()) {
+                            if (isBypassed(p)) {
+                                refreshPlayerForViewer(p, target);
+                            }
+                        }
+                    }
+                });
             }
         });
     }
@@ -578,16 +702,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         }
 
         // 4. Cache real skin before anonymizing if not already cached
-        PlayerProfile currentProfile = player.getPlayerProfile();
-        for (ProfileProperty prop : currentProfile.getProperties()) {
-            if ("textures".equalsIgnoreCase(prop.getName()) && !prop.getValue().equals(cachedSkinValue)) {
-                originalProfiles.putIfAbsent(player.getUniqueId(), currentProfile);
-                if (database != null) {
-                    database.saveOriginalSkin(player.getUniqueId(), realName, prop.getValue(), prop.getSignature());
-                }
-                break;
-            }
-        }
+        recordOriginalSkin(player);
 
         // 5. Apply Stranger skin texture to player profile
         // This ensures the player themselves in F5/inventory sees the Stranger skin,
@@ -607,28 +722,9 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
 
     public void enableAnonymizationForAll() {
         for (Player p : Bukkit.getOnlinePlayers()) {
+            recordOriginalSkin(p);
             originalDisplayNames.putIfAbsent(p.getUniqueId(), p.displayName());
             originalListNames.putIfAbsent(p.getUniqueId(), p.playerListName());
-
-            PlayerProfile current = p.getPlayerProfile();
-            boolean isStranger = false;
-            for (ProfileProperty prop : current.getProperties()) {
-                if ("textures".equalsIgnoreCase(prop.getName()) && prop.getValue().equals(cachedSkinValue)) {
-                    isStranger = true;
-                    break;
-                }
-            }
-            if (!isStranger) {
-                originalProfiles.put(p.getUniqueId(), current);
-                if (database != null) {
-                    for (ProfileProperty prop : current.getProperties()) {
-                        if ("textures".equalsIgnoreCase(prop.getName())) {
-                            database.saveOriginalSkin(p.getUniqueId(), getRealName(p.getUniqueId()), prop.getValue(), prop.getSignature());
-                            break;
-                        }
-                    }
-                }
-            }
 
             if (!isBypassed(p)) {
                 applySkinAndAnonymize(p);
@@ -640,7 +736,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
     public void removeAnonymizationForPlayer(Player p) {
         UUID uuid = p.getUniqueId();
         String realName = getRealName(uuid);
-        if (realName.equals("Unknown")) {
+        if (realName.equals("Unknown") || realName.equalsIgnoreCase(anonymousName) || realName.equalsIgnoreCase("Stranger")) {
             realName = p.getName();
         }
 
@@ -653,68 +749,27 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         p.displayName(null);
         p.playerListName(null);
 
-        // 3. Restore skin profile from memory, database or Mojang
-        PlayerProfile origProfile = originalProfiles.get(uuid);
+        // 3. Restore skin profile from realSkins or database
+        StrangersDatabase.CachedSkin realSkin = getOriginalSkin(uuid);
         boolean restored = false;
-        if (origProfile != null) {
-            boolean isStranger = false;
-            for (ProfileProperty prop : origProfile.getProperties()) {
-                if ("textures".equalsIgnoreCase(prop.getName()) && prop.getValue().equals(cachedSkinValue)) {
-                    isStranger = true;
-                    break;
+        if (realSkin != null && realSkin.value != null && !realSkin.value.equals(cachedSkinValue)) {
+            try {
+                PlayerProfile profile = Bukkit.createProfileExact(uuid, realName);
+                profile.setName(realName);
+                if (realSkin.signature != null && !realSkin.signature.isEmpty()) {
+                    profile.setProperty(new ProfileProperty("textures", realSkin.value, realSkin.signature));
+                } else {
+                    profile.setProperty(new ProfileProperty("textures", realSkin.value));
                 }
-            }
-            if (!isStranger && !origProfile.getProperties().isEmpty()) {
-                try {
-                    p.setPlayerProfile(origProfile);
-                    restored = true;
-                } catch (Exception e) {
-                    getLogger().warning("Failed to restore skin for " + p.getName() + ": " + e.getMessage());
-                }
-            }
-        }
-
-        if (!restored && database != null) {
-            StrangersDatabase.CachedSkin savedSkin = database.getOriginalSkin(uuid);
-            if (savedSkin != null && savedSkin.value != null && savedSkin.signature != null) {
-                try {
-                    PlayerProfile profile = Bukkit.createProfileExact(uuid, realName);
-                    profile.setName(realName);
-                    profile.setProperty(new ProfileProperty("textures", savedSkin.value, savedSkin.signature));
-                    p.setPlayerProfile(profile);
-                    originalProfiles.put(uuid, profile);
-                    restored = true;
-                } catch (Exception ignored) {
-                }
+                p.setPlayerProfile(profile);
+                restored = true;
+            } catch (Exception e) {
+                getLogger().warning("Failed to restore skin profile for " + p.getName() + ": " + e.getMessage());
             }
         }
 
         if (!restored) {
-            final String finalRealName = realName;
-            try {
-                PlayerProfile cleanProfile = Bukkit.createProfileExact(uuid, finalRealName);
-                cleanProfile.setName(finalRealName);
-                p.setPlayerProfile(cleanProfile);
-                getServer().getScheduler().runTaskAsynchronously(this, () -> {
-                    try {
-                        cleanProfile.complete(true);
-                        cleanProfile.setName(finalRealName);
-                        for (ProfileProperty prop : cleanProfile.getProperties()) {
-                            if ("textures".equalsIgnoreCase(prop.getName())) {
-                                if (database != null) {
-                                    database.saveOriginalSkin(uuid, finalRealName, prop.getValue(), prop.getSignature());
-                                }
-                                break;
-                            }
-                        }
-                        if (p.isOnline() && isBypassed(p)) {
-                            getServer().getScheduler().runTask(this, () -> p.setPlayerProfile(cleanProfile));
-                        }
-                    } catch (Throwable ignored) {
-                    }
-                });
-            } catch (Exception ignored) {
-            }
+            ensureOriginalSkinLoaded(uuid, realName);
         }
     }
 
@@ -1267,23 +1322,29 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
     public void onAsyncPlayerPreLogin(org.bukkit.event.player.AsyncPlayerPreLoginEvent event) {
         UUID uuid = event.getUniqueId();
         String realName = event.getName();
-        realNames.put(uuid, realName);
+        if (realName != null && !realName.equalsIgnoreCase(anonymousName) && !realName.equalsIgnoreCase("Stranger")) {
+            realNames.put(uuid, realName);
+        }
 
-        // Cache original values immediately upon pre-login
+        // Cache original values immediately upon pre-login if properties are already loaded
         PlayerProfile origProfile = event.getPlayerProfile();
         if (origProfile != null) {
-            originalProfiles.putIfAbsent(uuid, origProfile);
-            if (database != null) {
-                for (ProfileProperty prop : origProfile.getProperties()) {
-                    if ("textures".equalsIgnoreCase(prop.getName())) {
-                        if (!prop.getValue().equals(cachedSkinValue)) {
-                            database.saveOriginalSkin(uuid, realName, prop.getValue(), prop.getSignature());
+            for (ProfileProperty prop : origProfile.getProperties()) {
+                if ("textures".equalsIgnoreCase(prop.getName())) {
+                    String val = prop.getValue();
+                    String sig = prop.getSignature();
+                    if (val != null && !val.isEmpty() && !val.equals(cachedSkinValue)) {
+                        realSkins.put(uuid, new StrangersDatabase.CachedSkin(val, sig));
+                        if (database != null) {
+                            database.saveOriginalSkin(uuid, realName, val, sig);
                         }
-                        break;
                     }
+                    break;
                 }
             }
         }
+
+        ensureOriginalSkinLoaded(uuid, realName);
 
         if (!PacketEventsHookLoader.isAvailable() && !ProtocolLibHookLoader.isAvailable()) {
             if (pluginEnabled && cachedSkinValue != null && cachedSkinSignature != null) {
@@ -1331,32 +1392,17 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
 
-        // Cache original values immediately upon join if not stranger textures
-        PlayerProfile joinProfile = player.getPlayerProfile();
-        boolean isStrangerSkin = false;
-        for (ProfileProperty prop : joinProfile.getProperties()) {
-            if ("textures".equalsIgnoreCase(prop.getName()) && prop.getValue().equals(cachedSkinValue)) {
-                isStrangerSkin = true;
-                break;
-            }
+        if (!player.getName().equalsIgnoreCase(anonymousName) && !player.getName().equalsIgnoreCase("Stranger")) {
+            realNames.put(uuid, player.getName());
         }
-        if (!player.getName().equalsIgnoreCase(anonymousName)) {
-            realNames.put(player.getUniqueId(), player.getName());
-        }
-        if (!isStrangerSkin) {
-            originalProfiles.put(player.getUniqueId(), joinProfile);
-            if (database != null) {
-                for (ProfileProperty prop : joinProfile.getProperties()) {
-                    if ("textures".equalsIgnoreCase(prop.getName())) {
-                        database.saveOriginalSkin(player.getUniqueId(), getRealName(player.getUniqueId()), prop.getValue(), prop.getSignature());
-                        break;
-                    }
-                }
-            }
-        }
-        originalDisplayNames.putIfAbsent(player.getUniqueId(), player.displayName());
-        originalListNames.putIfAbsent(player.getUniqueId(), player.playerListName());
+
+        // 1. Record original skin immediately BEFORE applying any disguises!
+        recordOriginalSkin(player);
+
+        originalDisplayNames.putIfAbsent(uuid, player.displayName());
+        originalListNames.putIfAbsent(uuid, player.playerListName());
 
         if (pluginEnabled) {
             // Mute default join message completely for total anonymity
@@ -1368,7 +1414,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
             }
         }
 
-        ensureOriginalSkinLoaded(player.getUniqueId(), getRealName(player.getUniqueId()));
+        ensureOriginalSkinLoaded(uuid, getRealName(uuid));
     }
 
     @EventHandler
@@ -1376,11 +1422,10 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        // Clear cached values
+        // Clear UI cached values (preserve realNames and realSkins in memory so they are never lost!)
         originalProfiles.remove(uuid);
         originalDisplayNames.remove(uuid);
         originalListNames.remove(uuid);
-        realNames.remove(uuid);
 
         // Clear player voice processing states
         if (getServer().getPluginManager().getPlugin("voicechat") != null) {

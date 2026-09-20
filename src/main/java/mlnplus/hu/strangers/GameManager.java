@@ -268,7 +268,7 @@ public class GameManager {
             for (Player p : Bukkit.getOnlinePlayers()) {
                 p.playSound(p.getLocation(), Sound.EVENT_RAID_HORN, 1.0f, 1.0f);
             }
-            String titleStr = plugin.getMessage("start-title", "<gradient:#ff2a4b:#ff7788:#ffa737><bold>⚔ STRANGERS ⚔</bold></gradient>");
+            String titleStr = plugin.getMessage("start-title", "<gradient:#ff3355:#ff6688><bold>⚔ STRANGERS ⚔</bold></gradient>");
             String subStr = plugin.getMessage("start-subtitle", "");
             plugin.sendTitleToAll(titleStr, subStr, 10, 60, 20);
             return;
@@ -283,7 +283,7 @@ public class GameManager {
             } catch (Throwable ignored) {}
         }
 
-        String startTitle = plugin.getMessage("start-title", "<gradient:#ff2a4b:#ff7788:#ffa737><bold>⚔ STRANGERS ⚔</bold></gradient>");
+        String startTitle = plugin.getMessage("start-title", "<gradient:#ff3355:#ff6688><bold>⚔ STRANGERS ⚔</bold></gradient>");
         String startSub = plugin.getMessage("start-subtitle", "");
         plugin.sendTitleToAll(startTitle, startSub, 8, 45, 10);
 

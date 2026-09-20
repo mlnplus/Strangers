@@ -92,10 +92,10 @@ public class ProtocolLibHook {
                                         }
 
                                         StrangersDatabase.CachedSkin realSkin = ProtocolLibHook.this.plugin.getOriginalSkin(targetUuid);
-                                        if (realSkin != null && realSkin.value != null && realSkin.signature != null && newProfile != null) {
+                                        if (realSkin != null && realSkin.value != null && newProfile != null) {
                                             newProfile.getProperties().clear();
                                             newProfile.getProperties().put("textures",
-                                                    new WrappedSignedProperty("textures", realSkin.value, realSkin.signature));
+                                                    new WrappedSignedProperty("textures", realSkin.value, realSkin.signature != null ? realSkin.signature : ""));
                                         }
 
                                         Component origTab = ProtocolLibHook.this.plugin.getOriginalListName(targetUuid);

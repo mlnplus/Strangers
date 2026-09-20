@@ -121,9 +121,9 @@ public class PacketEventsHook implements PacketListener {
                         }
 
                         StrangersDatabase.CachedSkin realSkin = plugin.getOriginalSkin(targetUuid);
-                        if (realSkin != null && realSkin.value != null && realSkin.signature != null && profile != null) {
+                        if (realSkin != null && realSkin.value != null && profile != null) {
                             List<TextureProperty> realTextures = new ArrayList<>();
-                            realTextures.add(new TextureProperty("textures", realSkin.value, realSkin.signature));
+                            realTextures.add(new TextureProperty("textures", realSkin.value, realSkin.signature != null ? realSkin.signature : ""));
                             profile.setTextureProperties(realTextures);
                         }
 
