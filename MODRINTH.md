@@ -10,11 +10,11 @@
 
   <br />
 
-  <p>Custom-made for <b>Zxynn</b> and featured in his Anonymous SMP video:<br/>
+  <p>Custom-made for <b>Zxynn</b> and featured in his Strangers SMP video:<br/>
   <a href="https://www.youtube.com/watch?v=6r69C-k_jww" target="_blank" rel="noopener noreferrer"><b>▶ Watch: "How I Became Minecraft's Greatest Anonymous Killer"</b></a></p>
 
   <a href="https://www.youtube.com/watch?v=6r69C-k_jww" target="_blank" rel="noopener noreferrer">
-    <img src="https://img.youtube.com/vi/6r69C-k_jww/maxresdefault.jpg" width="600" alt="Zxynn Anonymous SMP Video"/>
+    <img src="https://img.youtube.com/vi/6r69C-k_jww/maxresdefault.jpg" width="600" alt="Zxynn Strangers SMP Video"/>
   </a>
 </div>
 
