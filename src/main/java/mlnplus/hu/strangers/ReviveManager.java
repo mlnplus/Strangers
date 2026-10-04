@@ -1,6 +1,5 @@
 package mlnplus.hu.strangers;
 
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.BanList;
 import org.bukkit.Material;
@@ -17,8 +16,8 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
+@SuppressWarnings({"deprecation", "null", "unchecked"})
 public class ReviveManager {
 
     private final Strangers plugin;
@@ -218,6 +217,7 @@ public class ReviveManager {
 
         // Play revive sounds to online players
         for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p == null) continue;
             p.playSound(p.getLocation(), Sound.ITEM_TOTEM_USE, 1.0f, 1.0f);
             p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.2f);
         }

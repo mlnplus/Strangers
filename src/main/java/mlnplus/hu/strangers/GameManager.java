@@ -1,8 +1,5 @@
 package mlnplus.hu.strangers;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
@@ -14,14 +11,12 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
+@SuppressWarnings({"null", "unchecked", "deprecation"})
 public class GameManager {
 
     private final Strangers plugin;
-    private final Map<String, Long> startConfirmations = new ConcurrentHashMap<>();
-    private final Map<String, Long> resetConfirmations = new ConcurrentHashMap<>();
-        private final AtomicBoolean isStarting = new AtomicBoolean(false);
+    private final AtomicBoolean isStarting = new AtomicBoolean(false);
 
     private volatile UUID startInitiatorUuid = null;
     private volatile boolean startInitiatorIsConsole = false;
@@ -171,8 +166,8 @@ public class GameManager {
                     float anchorPitch = 0.8f + (countdownSeconds - secondsLeft) * 0.3f;
 
                     for (Player p : players) {
-                        if (!p.isOnline()) continue;
-                        plugin.sendTitle(p, numeral, "", 0, 22, 5);
+                        if (p == null || !p.isOnline()) continue;
+                        plugin.sendTitle(p, numeral, sub, 0, 22, 5);
                         p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, notePitch);
                         p.playSound(p.getLocation(), Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 0.8f, anchorPitch);
 
@@ -266,7 +261,9 @@ public class GameManager {
 
         if (!cinematicTitles) {
             for (Player p : Bukkit.getOnlinePlayers()) {
-                p.playSound(p.getLocation(), Sound.EVENT_RAID_HORN, 1.0f, 1.0f);
+                if (p != null) {
+                    p.playSound(p.getLocation(), Sound.EVENT_RAID_HORN, 1.0f, 1.0f);
+                }
             }
             String titleStr = plugin.getMessage("start-title", "<gradient:#ff3355:#ff6688><bold>⚔ STRANGERS ⚔</bold></gradient>");
             String subStr = plugin.getMessage("start-subtitle", "");
@@ -276,11 +273,13 @@ public class GameManager {
 
         // Phase 1 (Instant): Dramatic Horns & Sound Stingers + Cool STRANGERS Title
         for (Player p : Bukkit.getOnlinePlayers()) {
-            p.playSound(p.getLocation(), Sound.EVENT_RAID_HORN, 1.0f, 0.85f);
-            p.playSound(p.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 0.6f, 0.7f);
-            try {
-                p.playSound(p.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_0, 0.8f, 0.9f);
-            } catch (Throwable ignored) {}
+            if (p != null) {
+                p.playSound(p.getLocation(), Sound.EVENT_RAID_HORN, 1.0f, 0.85f);
+                p.playSound(p.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 0.6f, 0.7f);
+                try {
+                    p.playSound(p.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_0, 0.8f, 0.9f);
+                } catch (Throwable ignored) {}
+            }
         }
 
         String startTitle = plugin.getMessage("start-title", "<gradient:#ff3355:#ff6688><bold>⚔ STRANGERS ⚔</bold></gradient>");
@@ -290,8 +289,10 @@ public class GameManager {
         // Phase 2 (Delayed by 50 ticks / 2.5s): TRUST NO ONE Title
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for (Player p : Bukkit.getOnlinePlayers()) {
-                p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 0.9f);
-                p.playSound(p.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 0.6f, 0.7f);
+                if (p != null) {
+                    p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 0.9f);
+                    p.playSound(p.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 0.6f, 0.7f);
+                }
             }
             String defaultTitle2 = (plugin.getLang().equalsIgnoreCase("hu"))
                     ? "<gradient:#ff4466:#ff2244><bold>⚔ NE BÍZZ SENKIBEN ⚔</bold></gradient>"
@@ -305,7 +306,9 @@ public class GameManager {
                     ? "<gradient:#ff2a4b:#ffa737><b>⚔ SZÉTSZÓRÁS KÉSZ</b></gradient> <dark_gray>▪</dark_gray> <gray>Védelem aktív: <#55ff99>" + protectionSeconds + "s</#55ff99></gray>"
                     : "<gradient:#ff2a4b:#ffa737><b>⚔ SCATTER COMPLETE</b></gradient> <dark_gray>▪</dark_gray> <gray>Resistance active: <#55ff99>" + protectionSeconds + "s</#55ff99></gray>";
             for (Player p : Bukkit.getOnlinePlayers()) {
-                p.sendActionBar(plugin.parseComponent(actionbarMsg));
+                if (p != null) {
+                    p.sendActionBar(plugin.parseComponent(actionbarMsg));
+                }
             }
         }, 50L);
     }
@@ -356,6 +359,7 @@ public class GameManager {
         // 2. Teleport everyone back to world spawn
         Location spawnLoc = world.getSpawnLocation().clone().add(0.5, 0.0, 0.5);
         for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player == null) continue;
             if (player.isInsideVehicle()) {
                 player.leaveVehicle();
             }
@@ -375,7 +379,9 @@ public class GameManager {
 
         // 5. Sound & Broadcast
         for (Player p : Bukkit.getOnlinePlayers()) {
-            p.playSound(p.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.0f);
+            if (p != null) {
+                p.playSound(p.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.0f);
+            }
         }
 
         String resetSuccess = plugin.getMessage("reset-success",
@@ -482,9 +488,9 @@ public class GameManager {
         world.getChunkAtAsync(chunkX, chunkZ).thenAccept(chunk -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 // 1. Chunk Biome check: reject ocean, river, swamp, beach, and shore chunks
-                String b1 = chunk.getBlock(8, 64, 8).getBiome().name().toUpperCase();
-                String b2 = chunk.getBlock(2, 64, 2).getBiome().name().toUpperCase();
-                String b3 = chunk.getBlock(13, 64, 13).getBiome().name().toUpperCase();
+                String b1 = chunk.getBlock(8, 64, 8).getBiome().getKey().getKey().toUpperCase(Locale.ROOT);
+                String b2 = chunk.getBlock(2, 64, 2).getBiome().getKey().getKey().toUpperCase(Locale.ROOT);
+                String b3 = chunk.getBlock(13, 64, 13).getBiome().getKey().getKey().toUpperCase(Locale.ROOT);
                 if (isWaterBiome(b1) || isWaterBiome(b2) || isWaterBiome(b3)) {
                     retryOrFallback(world, centerX, centerZ, scatterRadius, baseAngle, sectorWidth, assignedLocations, minDistance, attempt, future);
                     return;
@@ -575,7 +581,7 @@ public class GameManager {
 
     private Location findSurfaceGround(World world, int x, int z) {
         // 1. Biome check: reject all ocean, river, swamp, beach, and shore biomes
-        String biomeName = world.getBiome(x, 64, z).name().toUpperCase();
+        String biomeName = world.getBiome(x, 64, z).getKey().getKey().toUpperCase(Locale.ROOT);
         if (isWaterBiome(biomeName)) {
             return null;
         }

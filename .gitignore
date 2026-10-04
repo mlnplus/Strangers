@@ -1,4 +1,4 @@
-﻿# ── Gradle & Build Outputs ──
+# ── Gradle & Build Outputs ──
 .gradle/
 build/
 out/
@@ -8,10 +8,30 @@ maven/
 gradle_temp/
 *.class
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.ear
 *.zip
 *.tar.gz
+
+# ── Local SQLite & Database Files ──
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+database.db
+
+# ── Minecraft Test Server & Runtime ──
+run/
+server/
+test-server/
+world/
+world_nether/
+world_the_end/
+plugins/
+crash-reports/
 
 # ── IntelliJ IDEA ──
 .idea/
@@ -26,9 +46,19 @@ gradle_temp/
 
 # ── VS Code & Eclipse ──
 .vscode/
+*.code-workspace
+.history/
 .project
 .classpath
 .settings/
+
+# ── AI Agent Harnesses & Scaffolding ──
+.agents/
+.claude/
+.gemini/
+.cursor/
+.copilot/
+.system_generated/
 
 # ── Secrets, Private Keys & Environment ──
 *.pem
@@ -41,13 +71,24 @@ gradle_temp/
 .env.*.local
 !.env.example
 credentials.json
+auth*.json
 
-# ── Logs & Debug ──
+# ── Java Diagnostics & Crash Dumps ──
+hs_err_pid*
+replay_pid*
+*.hprof
+
+# ── Logs & Debugging ──
 *.log
 logs/
 
 # ── OS Generated Files ──
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 desktop.ini
 *.swp

@@ -180,6 +180,7 @@ public class PacketEventsHook implements PacketListener {
                         String text = match.getText();
                         boolean isRealName = false;
                         for (Player online : Bukkit.getOnlinePlayers()) {
+                            if (online == null) continue;
                             String realName = plugin.getRealName(online.getUniqueId());
                             if (realName.equalsIgnoreCase("Unknown") || realName.equalsIgnoreCase(plugin.getAnonymousName())) {
                                 realName = online.getName();
@@ -232,6 +233,7 @@ public class PacketEventsHook implements PacketListener {
                     Component updatedMsg = msg;
                     boolean modified = false;
                     for (Player online : Bukkit.getOnlinePlayers()) {
+                        if (online == null) continue;
                         if (plugin.getLifeManager() != null && plugin.getLifeManager().isEliminated(online.getUniqueId())) {
                             continue;
                         }

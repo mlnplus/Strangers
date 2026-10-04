@@ -175,6 +175,7 @@ public class ProtocolLibHook {
                                     String modifiedJson = json;
                                     boolean modified = false;
                                     for (Player online : ProtocolLibHook.this.plugin.getServer().getOnlinePlayers()) {
+                                        if (online == null) continue;
                                         if (ProtocolLibHook.this.plugin.getLifeManager() != null
                                                 && ProtocolLibHook.this.plugin.getLifeManager().isEliminated(online.getUniqueId())) {
                                             continue;
@@ -213,6 +214,7 @@ public class ProtocolLibHook {
                                     String modifiedRaw = raw;
                                     boolean modified = false;
                                     for (Player online : ProtocolLibHook.this.plugin.getServer().getOnlinePlayers()) {
+                                        if (online == null) continue;
                                         if (ProtocolLibHook.this.plugin.getLifeManager() != null
                                                 && ProtocolLibHook.this.plugin.getLifeManager().isEliminated(online.getUniqueId())) {
                                             continue;
@@ -246,6 +248,7 @@ public class ProtocolLibHook {
                                 List<String> completions = new ArrayList<>(Arrays.asList(currentArray));
                                 boolean modified = false;
                                 for (Player online : ProtocolLibHook.this.plugin.getServer().getOnlinePlayers()) {
+                                    if (online == null) continue;
                                     String realName = online.getName();
                                     if (completions.removeIf(c -> c.equalsIgnoreCase(realName))) {
                                         modified = true;

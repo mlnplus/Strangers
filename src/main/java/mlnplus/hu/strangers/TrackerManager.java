@@ -10,7 +10,6 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -33,8 +32,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
@@ -42,6 +39,7 @@ import org.bukkit.util.Vector;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings({"deprecation", "removal", "null", "unchecked"})
 public class TrackerManager implements Listener {
 
     private final Strangers plugin;
@@ -158,6 +156,7 @@ public class TrackerManager implements Listener {
             Bukkit.addRecipe(recipe);
             plugin.getLogger().info("Registered Identity Tracker NameTag crafting recipe.");
             for (Player player : Bukkit.getOnlinePlayers()) {
+                if (player == null) continue;
                 try {
                     player.discoverRecipe(recipeKey);
                 } catch (Exception ignored) {}
@@ -353,6 +352,7 @@ public class TrackerManager implements Listener {
 
         // Also ensure any online players not yet in SQLite are included
         for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online == null) continue;
             if (!seenUuids.contains(online.getUniqueId()) && !online.getUniqueId().equals(player.getUniqueId())) {
                 int lives = plugin.getLifeManager().getLives(online);
                 if (lives > 0) {
@@ -862,7 +862,7 @@ public class TrackerManager implements Listener {
 
                     // Check pause/resume state based on target presence
                     boolean targetOnline = targetPlayer != null && targetPlayer.isOnline();
-                    if (!targetOnline) {
+                    if (!targetOnline || targetPlayer == null) {
                         if (!active.isPaused) {
                             active.isPaused = true;
                             if (trackerPlayer != null && trackerPlayer.isOnline()) {
@@ -954,7 +954,7 @@ public class TrackerManager implements Listener {
                     String heartsPrefix = hearts.isEmpty() ? "" : hearts + " <dark_gray>•</dark_gray> ";
 
                     // Handle target offline
-                    if (!targetOnline) {
+                    if (!targetOnline || targetPlayer == null) {
                         if (useBossBar && active.hunterBossBar != null) {
                             String pausedBossBar = plugin.getMessage("tracker-bossbar-paused",
                                     "<gradient:#00d2ff:#3a7bd5><b>TRACKER</b></gradient> <dark_gray>»</dark_gray> <white><b>{TARGET}</b></white> <dark_gray>•</dark_gray> <yellow>[PAUSED - OFFLINE]</yellow>")

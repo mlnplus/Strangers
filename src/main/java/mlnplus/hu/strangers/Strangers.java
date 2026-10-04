@@ -8,9 +8,8 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.BanList;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -22,19 +21,21 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Strangers extends JavaPlugin implements Listener, CommandExecutor, TabCompleter {
+@SuppressWarnings({"deprecation", "removal", "null", "unchecked"})
+public class Strangers extends JavaPlugin implements Listener {
 
     private String lang;
     private String anonymousName;
-    private String chatFormatPattern;
 
     private boolean pluginEnabled;
     private StrangersDatabase database;
@@ -102,7 +103,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         }
         try {
             // 1. Get UUID from Player Name
-            URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + playerName);
+            URL url = URI.create("https://api.mojang.com/users/profiles/minecraft/" + playerName).toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(4000);
@@ -120,7 +121,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
             if (uuidStr == null) return null;
 
             // 2. Get Profile skin properties
-            URL profileUrl = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuidStr + "?unsigned=false");
+            URL profileUrl = URI.create("https://sessionserver.mojang.com/session/minecraft/profile/" + uuidStr + "?unsigned=false").toURL();
             HttpURLConnection profileConn = (HttpURLConnection) profileUrl.openConnection();
             profileConn.setRequestMethod("GET");
             profileConn.setConnectTimeout(4000);
@@ -162,9 +163,10 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
             return online.getName();
         }
         org.bukkit.OfflinePlayer op = Bukkit.getOfflinePlayer(uuid);
-        if (op.getName() != null && !op.getName().equalsIgnoreCase(anonymousName) && !op.getName().equalsIgnoreCase("Stranger")) {
-            realNames.put(uuid, op.getName());
-            return op.getName();
+        String opName = op.getName();
+        if (opName != null && !opName.equalsIgnoreCase(anonymousName) && !opName.equalsIgnoreCase("Stranger")) {
+            realNames.put(uuid, opName);
+            return opName;
         }
         return "Unknown";
     }
@@ -311,6 +313,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
             }
         }
         for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online == null) continue;
             if (getRealName(online.getUniqueId()).equalsIgnoreCase(name)) {
                 return online;
             }
@@ -391,9 +394,10 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         getServer().getPluginManager().registerEvents(this, this);
 
         // Register Command & Tab Completer
-        if (getCommand("strangers") != null) {
-            getCommand("strangers").setExecutor(this);
-            getCommand("strangers").setTabCompleter(this);
+        PluginCommand strangersCmd = getCommand("strangers");
+        if (strangersCmd != null) {
+            strangersCmd.setExecutor(this);
+            strangersCmd.setTabCompleter(this);
         }
 
         // Hook into Simple Voice Chat if present
@@ -466,12 +470,6 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
                 this.blockedCommands.add(cmd.toLowerCase());
             }
         }
-
-        String chatFormat = getConfig().getString("messages." + this.lang + ".chat-format");
-        if (chatFormat == null || chatFormat.isEmpty()) {
-            chatFormat = getConfig().getString("messages.chat-format", "&7<" + this.anonymousName + "> &f{MESSAGE}");
-        }
-        this.chatFormatPattern = colorize(chatFormat);
 
         if (this.reviveManager != null) {
             this.reviveManager.registerRecipe();
@@ -574,7 +572,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
                 getLogger().info("Fetching skin properties for '" + skinPlayer + "' from Mojang API...");
 
                 // 1. Get UUID from Player Name
-                URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + skinPlayer);
+                URL url = URI.create("https://api.mojang.com/users/profiles/minecraft/" + skinPlayer).toURL();
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.setConnectTimeout(5000);
@@ -599,8 +597,8 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
                 }
 
                 // 2. Get Profile skin properties
-                URL profileUrl = new URL(
-                        "https://sessionserver.mojang.com/session/minecraft/profile/" + uuidStr + "?unsigned=false");
+                URL profileUrl = URI.create(
+                        "https://sessionserver.mojang.com/session/minecraft/profile/" + uuidStr + "?unsigned=false").toURL();
                 HttpURLConnection profileConn = (HttpURLConnection) profileUrl.openConnection();
                 profileConn.setRequestMethod("GET");
                 profileConn.setConnectTimeout(5000);
@@ -710,7 +708,6 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         // PacketEvents/ProtocolLib will intercept and restore real skin for revealed viewers.
         try {
             PlayerProfile profile = Bukkit.createProfileExact(player.getUniqueId(), realName);
-            profile.setName(realName);
             if (cachedSkinValue != null && cachedSkinSignature != null) {
                 profile.setProperty(new ProfileProperty("textures", cachedSkinValue, cachedSkinSignature));
             }
@@ -722,6 +719,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
 
     public void enableAnonymizationForAll() {
         for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p == null) continue;
             recordOriginalSkin(p);
             originalDisplayNames.putIfAbsent(p.getUniqueId(), p.displayName());
             originalListNames.putIfAbsent(p.getUniqueId(), p.playerListName());
@@ -755,7 +753,6 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         if (realSkin != null && realSkin.value != null && !realSkin.value.equals(cachedSkinValue)) {
             try {
                 PlayerProfile profile = Bukkit.createProfileExact(uuid, realName);
-                profile.setName(realName);
                 if (realSkin.signature != null && !realSkin.signature.isEmpty()) {
                     profile.setProperty(new ProfileProperty("textures", realSkin.value, realSkin.signature));
                 } else {
@@ -777,7 +774,9 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         Team team = getOrCreateTeam();
         team.removeEntry(anonymousName);
         for (Player p : Bukkit.getOnlinePlayers()) {
-            removeAnonymizationForPlayer(p);
+            if (p != null) {
+                removeAnonymizationForPlayer(p);
+            }
         }
         refreshAllPlayers();
     }
@@ -785,14 +784,14 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
     public void refreshViewersForPlayer(Player viewer) {
         if (viewer == null || !viewer.isOnline()) return;
         for (Player target : Bukkit.getOnlinePlayers()) {
-            if (!viewer.equals(target)) {
+            if (target != null && !viewer.equals(target)) {
                 viewer.hidePlayer(this, target);
             }
         }
         getServer().getScheduler().runTaskLater(this, () -> {
             if (viewer.isOnline()) {
                 for (Player target : Bukkit.getOnlinePlayers()) {
-                    if (!viewer.equals(target) && target.isOnline()) {
+                    if (target != null && target.isOnline() && !viewer.equals(target)) {
                         viewer.showPlayer(this, target);
                     }
                 }
@@ -803,14 +802,14 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
     public void refreshPlayerForViewers(Player target) {
         if (target == null || !target.isOnline()) return;
         for (Player viewer : Bukkit.getOnlinePlayers()) {
-            if (!viewer.equals(target)) {
+            if (viewer != null && !viewer.equals(target)) {
                 viewer.hidePlayer(this, target);
             }
         }
         getServer().getScheduler().runTaskLater(this, () -> {
             if (target.isOnline()) {
                 for (Player viewer : Bukkit.getOnlinePlayers()) {
-                    if (!viewer.equals(target) && viewer.isOnline()) {
+                    if (viewer != null && viewer.isOnline() && !viewer.equals(target)) {
                         viewer.showPlayer(this, target);
                     }
                 }
@@ -820,7 +819,9 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
 
     public void refreshAllPlayers() {
         for (Player p : Bukkit.getOnlinePlayers()) {
-            refreshViewersForPlayer(p);
+            if (p != null) {
+                refreshViewersForPlayer(p);
+            }
         }
     }
 
@@ -859,7 +860,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!sender.isOp() && !sender.hasPermission("strangers.admin") && !sender.hasPermission("strangers.bypass")) {
             sender.sendMessage(parseComponent(getMessage("no-permission", "&cYou do not have permission to execute this command!")));
             return true;
@@ -1243,7 +1244,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (!sender.isOp() && !sender.hasPermission("strangers.admin") && !sender.hasPermission("strangers.bypass")) {
             return Collections.emptyList();
         }
@@ -1285,7 +1286,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
                 }
             } else if (sub.equals("giverevivebook") || sub.equals("givetracker")) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (p.getName().toLowerCase().startsWith(partial)) {
+                    if (p != null && p.getName().toLowerCase().startsWith(partial)) {
                         completions.add(p.getName());
                     }
                 }
@@ -1309,7 +1310,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         } else if (args.length == 3 && args[0].equalsIgnoreCase("lives")) {
             String partial = args[2].toLowerCase();
             for (Player p : Bukkit.getOnlinePlayers()) {
-                if (p.getName().toLowerCase().startsWith(partial)) {
+                if (p != null && p.getName().toLowerCase().startsWith(partial)) {
                     completions.add(p.getName());
                 }
             }
@@ -1451,6 +1452,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
             String rawMessage = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(message);
             if (maskRealNames) {
                 for (Player online : Bukkit.getOnlinePlayers()) {
+                    if (online == null) continue;
                     String onlineName = online.getName();
                     rawMessage = rawMessage.replaceAll("(?i)\\b" + java.util.regex.Pattern.quote(onlineName) + "\\b", anonymousName);
                 }
@@ -1718,7 +1720,9 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         net.kyori.adventure.title.Title title = net.kyori.adventure.title.Title.title(titleComp, subComp, times);
 
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            onlinePlayer.showTitle(title);
+            if (onlinePlayer != null) {
+                onlinePlayer.showTitle(title);
+            }
         }
     }
 
@@ -1748,7 +1752,9 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         net.kyori.adventure.title.Title title = net.kyori.adventure.title.Title.title(titleComp, subComp, times);
 
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            onlinePlayer.showTitle(title);
+            if (onlinePlayer != null) {
+                onlinePlayer.showTitle(title);
+            }
         }
     }
 
@@ -1813,7 +1819,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
             for (char c : group.toCharArray()) {
                 replacement.append('\u00A7').append(c);
             }
-            matcher.appendReplacement(builder, matcher.quoteReplacement(replacement.toString()));
+            matcher.appendReplacement(builder, java.util.regex.Matcher.quoteReplacement(replacement.toString()));
         }
         matcher.appendTail(builder);
         return builder.toString();
@@ -1903,6 +1909,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
 
         // 3. Block any command execution if any argument matches an online player's real name
         for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online == null) continue;
             String realName = getRealName(online.getUniqueId());
             if (realName.equals("Unknown") || realName.equalsIgnoreCase(anonymousName)) {
                 continue;
@@ -1933,6 +1940,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         boolean modified = false;
 
         for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online == null) continue;
             String realName = online.getName();
             if (completions.removeIf(c -> c.equalsIgnoreCase(realName))) {
                 modified = true;
@@ -1947,6 +1955,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
             List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> compList = new ArrayList<>(event.completions());
             boolean compModified = false;
             for (Player online : Bukkit.getOnlinePlayers()) {
+                if (online == null) continue;
                 String realName = online.getName();
                 if (compList.removeIf(c -> c.suggestion().equalsIgnoreCase(realName))) {
                     compModified = true;
@@ -1973,6 +1982,7 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         boolean modified = false;
 
         for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online == null) continue;
             String realName = online.getName();
             if (completions.removeIf(c -> c.equalsIgnoreCase(realName))) {
                 modified = true;
@@ -2095,9 +2105,10 @@ public class Strangers extends JavaPlugin implements Listener, CommandExecutor, 
         for (org.bukkit.plugin.Plugin p : org.bukkit.Bukkit.getPluginManager().getPlugins()) {
             if (p.getName().equalsIgnoreCase(getName())) continue;
             boolean isMlnplus = false;
+            String website = p.getPluginMeta().getWebsite();
             if (p.getPluginMeta().getAuthors().contains("mlnplus")) {
                 isMlnplus = true;
-            } else if (p.getPluginMeta().getWebsite() != null && (p.getPluginMeta().getWebsite().contains("mlnplus") || p.getPluginMeta().getWebsite().contains("mln.plus"))) {
+            } else if (website != null && (website.contains("mlnplus") || website.contains("mln.plus"))) {
                 isMlnplus = true;
             } else if (p.getClass().getName().startsWith("mln.plus") || p.getClass().getName().startsWith("mlnplus.hu")) {
                 isMlnplus = true;

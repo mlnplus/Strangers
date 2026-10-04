@@ -10,6 +10,7 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings({"deprecation", "removal", "null", "unchecked"})
 public class LifeManager {
 
     private final Strangers plugin;
@@ -154,6 +155,7 @@ public class LifeManager {
 
                 if (broadcastSound) {
                     for (Player p : Bukkit.getOnlinePlayers()) {
+                        if (p == null) continue;
                         p.playSound(p.getLocation(), sound, volume, pitch);
                         p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_RESPAWN_ANCHOR_DEPLETE, 0.7f, 0.6f);
                     }
@@ -250,6 +252,7 @@ public class LifeManager {
                 String defaultFormat = plugin.getConfig().getString("actionbar.format", "{HEARTS}");
                 String format = plugin.getMessage("actionbar-format", defaultFormat);
                 for (Player player : Bukkit.getOnlinePlayers()) {
+                    if (player == null || !player.isOnline()) continue;
                     if (plugin.getTrackerManager() != null && plugin.getTrackerManager().hasActiveTracker(player.getUniqueId())) {
                         continue; // Tracking HUD handles combined hearts and navigation seamlessly
                     }
@@ -276,6 +279,7 @@ public class LifeManager {
             }
         }
         for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p == null) continue;
             StrangersDatabase.LivesData data = getOrCreateData(p.getUniqueId(), plugin.getRealName(p.getUniqueId()));
             data.lives = defaultLives;
             data.hasBeenRevived = false;

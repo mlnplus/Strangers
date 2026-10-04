@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@SuppressWarnings({"null", "unchecked"})
 public class ConfirmationGUI {
 
     // Minecraft textures for green checkmark (tick) and red cross (X)

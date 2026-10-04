@@ -7,6 +7,7 @@ import de.maxhenkel.voicechat.api.opus.OpusEncoder;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings({"null", "unchecked"})
 public class VoiceProcessorManager {
 
     private final VoicechatApi api;
@@ -43,7 +44,11 @@ public class VoiceProcessorManager {
     }
 
     public void clear() {
-        states.values().forEach(PlayerAudioState::close);
+        for (PlayerAudioState state : states.values()) {
+            if (state != null) {
+                state.close();
+            }
+        }
         states.clear();
     }
 
