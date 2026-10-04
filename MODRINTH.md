@@ -2,18 +2,18 @@
   <h1>🎭 Strangers</h1>
   <p><b>Anonymous player profiles, proximity voice pitch shifter, and 3-lives hardcore SMP mechanics for Paper servers.</b></p>
 
-  [![Minecraft](https://img.shields.io/badge/Minecraft-1.20%20--%201.21+-brightgreen?style=for-the-badge&logo=minecraft)](https://papermc.io)
-  [![Server Software](https://img.shields.io/badge/Server-Paper%20%7C%20Purpur-blue?style=for-the-badge&logo=papermc)](https://papermc.io)
-  [![Voice Chat](https://img.shields.io/badge/Voice%20Chat-Simple%20Voice%20Chat-orange?style=for-the-badge)](https://modrinth.com/plugin/simple-voice-chat)
-  [![Source](https://img.shields.io/badge/Source-GitHub-181717?style=for-the-badge&logo=github)](https://github.com/mlnplus/Strangers)
-  [![License](https://img.shields.io/badge/License-Custom-red?style=for-the-badge)](https://github.com/mlnplus/Strangers/blob/main/LICENSE)
+  <a href="https://papermc.io" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Minecraft-1.20%20--%201.21+-brightgreen?style=for-the-badge&logo=minecraft" alt="Minecraft" /></a>
+  <a href="https://papermc.io" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Server-Paper%20%7C%20Purpur-blue?style=for-the-badge&logo=papermc" alt="Server Software" /></a>
+  <a href="https://modrinth.com/plugin/simple-voice-chat" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Voice%20Chat-Simple%20Voice%20Chat-orange?style=for-the-badge" alt="Voice Chat" /></a>
+  <a href="https://github.com/mlnplus/Strangers" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Source-GitHub-181717?style=for-the-badge&logo=github" alt="Source" /></a>
+  <a href="https://github.com/mlnplus/Strangers/blob/main/LICENSE" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/License-Custom-red?style=for-the-badge" alt="License" /></a>
 
   <br />
 
   <p>Custom-made for <b>Zxynn</b> and featured in his Anonymous SMP video:<br/>
-  <a href="https://www.youtube.com/watch?v=6r69C-k_jww"><b>▶ Watch: "How I Became Minecraft's Greatest Anonymous Killer"</b></a></p>
+  <a href="https://www.youtube.com/watch?v=6r69C-k_jww" target="_blank" rel="noopener noreferrer"><b>▶ Watch: "How I Became Minecraft's Greatest Anonymous Killer"</b></a></p>
 
-  <a href="https://www.youtube.com/watch?v=6r69C-k_jww">
+  <a href="https://www.youtube.com/watch?v=6r69C-k_jww" target="_blank" rel="noopener noreferrer">
     <img src="https://img.youtube.com/vi/6r69C-k_jww/maxresdefault.jpg" width="600" alt="Zxynn Anonymous SMP Video"/>
   </a>
 </div>
@@ -136,7 +136,7 @@ nametag-tracker:
 ---
 
 <div align="center">
-  <p style="font-weight: bold;">Protected under the <a href="https://github.com/mlnplus/Strangers/blob/main/LICENSE">Strangers Public & Attribution License</a></p>
+  <p style="font-weight: bold;">Protected under the <a href="https://github.com/mlnplus/Strangers/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Strangers Public & Attribution License</a></p>
   <p>Code modification is permitted for personal/server use • Public redistribution or resale is strictly prohibited • Mandatory credit to <b>mlnplus</b></p>
-  <p>Created with ❤️ by <a href="https://mln.plus">mlnplus</a></p>
+  <p>Created with ❤️ by <a href="https://mln.plus" target="_blank" rel="noopener noreferrer">mlnplus</a></p>
 </div>
