@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@SuppressWarnings({"null", "unchecked", "deprecation"})
+@SuppressWarnings("null")
 public class GameManager {
 
     private final Strangers plugin;

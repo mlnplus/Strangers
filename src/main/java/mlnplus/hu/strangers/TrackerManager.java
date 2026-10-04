@@ -39,7 +39,7 @@ import org.bukkit.util.Vector;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-@SuppressWarnings({"deprecation", "removal", "null", "unchecked"})
+@SuppressWarnings({"removal", "null"})
 public class TrackerManager implements Listener {
 
     private final Strangers plugin;

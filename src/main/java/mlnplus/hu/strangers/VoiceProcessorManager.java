@@ -7,7 +7,7 @@ import de.maxhenkel.voicechat.api.opus.OpusEncoder;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-@SuppressWarnings({"null", "unchecked"})
+@SuppressWarnings("null")
 public class VoiceProcessorManager {
 
     private final VoicechatApi api;

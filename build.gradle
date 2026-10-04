@@ -17,17 +17,12 @@ repositories {
         name = "maxhenkel-repo"
         url = "https://maven.maxhenkel.de/repository/public"
     }
-    maven {
-        name = "dmulloy2-repo"
-        url = "https://repo.dmulloy2.net/repository/public/"
-    }
-    maven { url "https://repo.codemc.io/repository/maven-releases/" }
+    maven { url = "https://repo.codemc.io/repository/maven-releases/" }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.2-rc-2.build.9-alpha")
     compileOnly("de.maxhenkel.voicechat:voicechat-api:2.6.0")
-    compileOnly("com.comphenix.protocol:ProtocolLib:5.3.0")
     compileOnly("com.github.retrooper:packetevents-spigot:2.7.0")
 }
 
@@ -62,7 +57,7 @@ tasks.withType(JavaCompile).configureEach {
 processResources {
     def props = [version: version]
     inputs.properties props
-    filteringCharset 'UTF-8'
+    filteringCharset = 'UTF-8'
     filesMatching('plugin.yml') {
         expand props
     }
@@ -71,5 +66,8 @@ processResources {
 
 shadowJar {
     archiveFileName = 'Strangersv2.jar'
-    destinationDirectory = file("C:/mlnplus/IdeaArtifacts")
+    def localArtifactDir = file("C:/mlnplus/IdeaArtifacts")
+    if (localArtifactDir.exists()) {
+        destinationDirectory = localArtifactDir
+    }
 }

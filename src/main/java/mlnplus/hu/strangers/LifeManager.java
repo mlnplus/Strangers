@@ -10,7 +10,7 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-@SuppressWarnings({"deprecation", "removal", "null", "unchecked"})
+@SuppressWarnings({"deprecation", "removal", "null"})
 public class LifeManager {
 
     private final Strangers plugin;

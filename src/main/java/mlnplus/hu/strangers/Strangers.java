@@ -31,7 +31,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-@SuppressWarnings({"deprecation", "removal", "null", "unchecked"})
+@SuppressWarnings({"deprecation", "removal", "null"})
 public class Strangers extends JavaPlugin implements Listener {
 
     private String lang;
@@ -407,11 +407,11 @@ public class Strangers extends JavaPlugin implements Listener {
             getLogger().info("Simple Voice Chat not found. Voice changer will be disabled.");
         }
 
-        // Hook into ProtocolLib if present
-        ProtocolLibHookLoader.register(this);
-
-        // Hook into PacketEvents if present
+        // Hook into PacketEvents
         PacketEventsHookLoader.register(this);
+        if (!PacketEventsHookLoader.isAvailable()) {
+            getLogger().warning("PacketEvents is not available! Packet-level identity and skin disguises require PacketEvents.");
+        }
 
         long elapsed = System.currentTimeMillis() - startTime;
         printAsciiArt(elapsed);
@@ -427,9 +427,6 @@ public class Strangers extends JavaPlugin implements Listener {
         if (getServer().getPluginManager().getPlugin("voicechat") != null) {
             VoiceChatHookLoader.shutdown();
         }
-
-        // Cleanup ProtocolLib hook
-        ProtocolLibHookLoader.shutdown();
 
         // Cleanup PacketEvents hook
         PacketEventsHookLoader.shutdown();
@@ -705,7 +702,7 @@ public class Strangers extends JavaPlugin implements Listener {
         // 5. Apply Stranger skin texture to player profile
         // This ensures the player themselves in F5/inventory sees the Stranger skin,
         // and Paper native entity tracker uses the Stranger skin textures.
-        // PacketEvents/ProtocolLib will intercept and restore real skin for revealed viewers.
+        // PacketEvents will intercept and restore real skin for revealed viewers.
         try {
             PlayerProfile profile = Bukkit.createProfileExact(player.getUniqueId(), realName);
             if (cachedSkinValue != null && cachedSkinSignature != null) {
@@ -1347,7 +1344,7 @@ public class Strangers extends JavaPlugin implements Listener {
 
         ensureOriginalSkinLoaded(uuid, realName);
 
-        if (!PacketEventsHookLoader.isAvailable() && !ProtocolLibHookLoader.isAvailable()) {
+        if (!PacketEventsHookLoader.isAvailable()) {
             if (pluginEnabled && cachedSkinValue != null && cachedSkinSignature != null) {
                 try {
                     PlayerProfile profile = Bukkit.createProfile(uuid, realName);

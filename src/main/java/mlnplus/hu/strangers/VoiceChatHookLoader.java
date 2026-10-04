@@ -3,7 +3,7 @@ package mlnplus.hu.strangers;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import java.util.UUID;
 
-@SuppressWarnings({"null", "unchecked"})
+@SuppressWarnings("null")
 public class VoiceChatHookLoader {
     
     private static VoiceChatHook hook;

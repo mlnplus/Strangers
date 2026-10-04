@@ -17,7 +17,7 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.ArrayList;
 import java.util.List;
 
-@SuppressWarnings({"deprecation", "null", "unchecked"})
+@SuppressWarnings({"deprecation", "null"})
 public class ReviveManager {
 
     private final Strangers plugin;
