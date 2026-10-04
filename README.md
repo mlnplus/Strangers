@@ -9,6 +9,12 @@
 
   <br />
 
+  ```
+  ⚠️ DISCLAIMER: Artificial Intelligence was used in the development of this plugin.
+  ```
+
+  <br />
+
   <p>Custom-made for <b>Zxynn</b> and featured in his Anonymous SMP video:<br/>
   <a href="https://www.youtube.com/watch?v=6r69C-k_jww"><b>▶ Watch: "How I Became Minecraft's Greatest Anonymous Killer"</b></a></p>
 
