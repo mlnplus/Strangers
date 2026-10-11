@@ -1,4 +1,8 @@
-# ── Gradle & Build Outputs ──
+# ================================================================================
+# Strangers v2 — Git Ignore
+# ================================================================================
+
+# ── Gradle & Build Outputs ───────────────────────────────────────────────────
 .gradle/
 build/
 out/
@@ -7,14 +11,17 @@ bin/
 maven/
 gradle_temp/
 *.class
+
+# Build artifacts (preserve Gradle wrapper jar)
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
 *.war
 *.ear
 *.zip
 *.tar.gz
+*.rar
 
-# ── Local SQLite & Database Files ──
+# ── Local SQLite, Databases & Cache ──────────────────────────────────────────
 *.db
 *.db-journal
 *.db-wal
@@ -22,8 +29,10 @@ gradle_temp/
 *.sqlite
 *.sqlite3
 database.db
+data/
+cache/
 
-# ── Minecraft Test Server & Runtime ──
+# ── Minecraft Server Runtime & Test Environment ──────────────────────────────
 run/
 server/
 test-server/
@@ -33,7 +42,7 @@ world_the_end/
 plugins/
 crash-reports/
 
-# ── IntelliJ IDEA ──
+# ── IntelliJ IDEA ────────────────────────────────────────────────────────────
 .idea/
 *.iml
 *.ipr
@@ -44,7 +53,7 @@ crash-reports/
 /dataSources.local.xml
 /httpRequests/
 
-# ── VS Code & Eclipse ──
+# ── VS Code & Eclipse ────────────────────────────────────────────────────────
 .vscode/
 *.code-workspace
 .history/
@@ -52,7 +61,7 @@ crash-reports/
 .classpath
 .settings/
 
-# ── AI Agent Harnesses & Scaffolding ──
+# ── AI Agents & IDE Assistants ───────────────────────────────────────────────
 .agents/
 .claude/
 .gemini/
@@ -60,29 +69,33 @@ crash-reports/
 .copilot/
 .system_generated/
 
-# ── Secrets, Private Keys & Environment ──
+# ── Secrets, Private Keys & Environment ──────────────────────────────────────
 *.pem
 *.key
 *.jks
 *.keystore
+*.p12
+*.pfx
 .env
 .env.*
 .env.local
 .env.*.local
 !.env.example
+!.env.template
 credentials.json
 auth*.json
+token.txt
 
-# ── Java Diagnostics & Crash Dumps ──
+# ── Java Diagnostics & Crash Dumps ───────────────────────────────────────────
 hs_err_pid*
 replay_pid*
 *.hprof
 
-# ── Logs & Debugging ──
+# ── Logs & Debugging ─────────────────────────────────────────────────────────
 *.log
 logs/
 
-# ── OS Generated Files ──
+# ── OS Generated Files ───────────────────────────────────────────────────────
 .DS_Store
 .DS_Store?
 ._*
